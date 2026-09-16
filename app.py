@@ -2,22 +2,46 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 import mysql.connector
 from mysql.connector import Error
 from datetime import datetime
+import os
+
+
+# =========================================================
+# FLASK APPLICATION
+# =========================================================
 
 app = Flask(__name__)
 
-# Secret key for login session
-app.secret_key = "smart_parking_secret_key_2026"
+
+# =========================================================
+# SECRET KEY
+# =========================================================
+# Local: uses the default value
+# Render: uses SECRET_KEY environment variable
+
+app.secret_key = os.getenv(
+    "SECRET_KEY",
+    "smart_parking_secret_key_2026"
+)
 
 
 # =========================================================
 # DATABASE CONFIGURATION
 # =========================================================
+# Local XAMPP MySQL:
+#   Host     = 127.0.0.1
+#   User     = root
+#   Password = empty
+#   Database = smart_parking
+#
+# Render:
+#   These values will come from Environment Variables.
 
 DB_CONFIG = {
-    "host": "127.0.0.1",
-    "user": "root",
-    "password": "",
-    "database": "smart_parking"
+    "host": os.getenv("DB_HOST", "127.0.0.1"),
+    "user": os.getenv("DB_USER", "root"),
+    "password": os.getenv("DB_PASSWORD", ""),
+    "database": os.getenv("DB_NAME", "smart_parking"),
+    "port": int(os.getenv("DB_PORT", "3306"))
 }
 
 
@@ -26,13 +50,18 @@ DB_CONFIG = {
 # =========================================================
 
 def get_db_connection():
+
     try:
-        connection = mysql.connector.connect(**DB_CONFIG)
+
+        connection = mysql.connector.connect(
+            **DB_CONFIG
+        )
 
         if connection.is_connected():
             return connection
 
     except Error as e:
+
         print("Database connection error:", e)
 
     return None
@@ -66,6 +95,7 @@ def login():
         password = request.form.get("password")
 
         if not email or not password:
+
             error = "Please enter email and password."
 
             return render_template(
@@ -76,16 +106,20 @@ def login():
         connection = get_db_connection()
 
         if connection is None:
+
             return "Database connection failed."
 
         cursor = connection.cursor(dictionary=True)
 
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT *
             FROM users
             WHERE email = %s
             AND password = %s
-        """, (email, password))
+            """,
+            (email, password)
+        )
 
         user = cursor.fetchone()
 
@@ -130,47 +164,57 @@ def logout():
 def dashboard():
 
     if "user_id" not in session:
+
         return redirect(url_for("login"))
 
     connection = get_db_connection()
 
     if connection is None:
+
         return "Database connection failed."
 
     cursor = connection.cursor(dictionary=True)
 
     # Total slots
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT COUNT(*) AS total
         FROM parking_slots
-    """)
+        """
+    )
 
     total_slots = cursor.fetchone()["total"]
 
     # Available slots
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT COUNT(*) AS available
         FROM parking_slots
         WHERE status = 'Available'
-    """)
+        """
+    )
 
     available_slots = cursor.fetchone()["available"]
 
     # Occupied slots
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT COUNT(*) AS occupied
         FROM parking_slots
         WHERE status = 'Occupied'
-    """)
+        """
+    )
 
     occupied_slots = cursor.fetchone()["occupied"]
 
     # Reserved slots
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT COUNT(*) AS reserved
         FROM parking_slots
         WHERE status = 'Reserved'
-    """)
+        """
+    )
 
     reserved_slots = cursor.fetchone()["reserved"]
 
@@ -194,30 +238,36 @@ def dashboard():
 def slots():
 
     if "user_id" not in session:
+
         return redirect(url_for("login"))
 
     connection = get_db_connection()
 
     if connection is None:
+
         return "Database connection failed."
 
     cursor = connection.cursor(dictionary=True)
 
     # Get all parking slots
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT *
         FROM parking_slots
         ORDER BY id
-    """)
+        """
+    )
 
     parking_slots = cursor.fetchall()
 
     # Get active parking records
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT *
         FROM parking_records
         WHERE status = 'Active'
-    """)
+        """
+    )
 
     parking_records = cursor.fetchall()
 
@@ -239,22 +289,26 @@ def slots():
 def reserve():
 
     if "user_id" not in session:
+
         return redirect(url_for("login"))
 
     connection = get_db_connection()
 
     if connection is None:
+
         return "Database connection failed."
 
     cursor = connection.cursor(dictionary=True)
 
     # Get available slots
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT *
         FROM parking_slots
         WHERE status = 'Available'
         ORDER BY id
-    """)
+        """
+    )
 
     available_slots = cursor.fetchall()
 
@@ -279,12 +333,15 @@ def reserve():
             )
 
         # Check slot availability
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT *
             FROM parking_slots
             WHERE id = %s
             AND status = 'Available'
-        """, (slot_id,))
+            """,
+            (slot_id,)
+        )
 
         slot = cursor.fetchone()
 
@@ -300,7 +357,8 @@ def reserve():
             )
 
         # Insert reservation
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO reservations
             (
                 user_id,
@@ -313,26 +371,31 @@ def reserve():
             )
             VALUES
             (%s, %s, %s, %s, %s, %s, 'Confirmed')
-        """, (
-            session["user_id"],
-            slot_id,
-            vehicle_number,
-            reservation_date,
-            start_time,
-            end_time
-        ))
+            """,
+            (
+                session["user_id"],
+                slot_id,
+                vehicle_number,
+                reservation_date,
+                start_time,
+                end_time
+            )
+        )
 
         # Update slot
-        cursor.execute("""
+        cursor.execute(
+            """
             UPDATE parking_slots
             SET
                 status = 'Reserved',
                 vehicle_number = %s
             WHERE id = %s
-        """, (
-            vehicle_number,
-            slot_id
-        ))
+            """,
+            (
+                vehicle_number,
+                slot_id
+            )
+        )
 
         connection.commit()
 
@@ -358,21 +421,26 @@ def reserve():
 def payments():
 
     if "user_id" not in session:
+
         return redirect(url_for("login"))
 
     connection = get_db_connection()
 
     if connection is None:
+
         return "Database connection failed."
 
     cursor = connection.cursor(dictionary=True)
 
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT *
         FROM payments
         WHERE user_id = %s
         ORDER BY id DESC
-    """, (session["user_id"],))
+        """,
+        (session["user_id"],)
+    )
 
     payments_data = cursor.fetchall()
 
@@ -393,27 +461,33 @@ def payments():
 def park_vehicle():
 
     if "user_id" not in session:
+
         return redirect(url_for("login"))
 
     slot_id = request.form.get("slot_id")
     vehicle_number = request.form.get("vehicle_number")
 
     if not slot_id or not vehicle_number:
+
         return "Slot and vehicle number are required."
 
     connection = get_db_connection()
 
     if connection is None:
+
         return "Database connection failed."
 
     cursor = connection.cursor(dictionary=True)
 
     # Find slot
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT *
         FROM parking_slots
         WHERE id = %s
-    """, (slot_id,))
+        """,
+        (slot_id,)
+    )
 
     slot = cursor.fetchone()
 
@@ -433,7 +507,8 @@ def park_vehicle():
         return "Parking slot is not available."
 
     # Create parking record
-    cursor.execute("""
+    cursor.execute(
+        """
         INSERT INTO parking_records
         (
             user_id,
@@ -444,23 +519,28 @@ def park_vehicle():
         )
         VALUES
         (%s, %s, %s, NOW(), 'Active')
-    """, (
-        session["user_id"],
-        slot_id,
-        vehicle_number
-    ))
+        """,
+        (
+            session["user_id"],
+            slot_id,
+            vehicle_number
+        )
+    )
 
     # Update slot
-    cursor.execute("""
+    cursor.execute(
+        """
         UPDATE parking_slots
         SET
             status = 'Occupied',
             vehicle_number = %s
         WHERE id = %s
-    """, (
-        vehicle_number,
-        slot_id
-    ))
+        """,
+        (
+            vehicle_number,
+            slot_id
+        )
+    )
 
     connection.commit()
 
@@ -478,22 +558,27 @@ def park_vehicle():
 def vehicle_exit(record_id):
 
     if "user_id" not in session:
+
         return redirect(url_for("login"))
 
     connection = get_db_connection()
 
     if connection is None:
+
         return "Database connection failed."
 
     cursor = connection.cursor(dictionary=True)
 
     # Find active record
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT *
         FROM parking_records
         WHERE id = %s
         AND status = 'Active'
-    """, (record_id,))
+        """,
+        (record_id,)
+    )
 
     record = cursor.fetchone()
 
@@ -533,7 +618,8 @@ def vehicle_exit(record_id):
         amount = 20 + ((hours - 1) * 10)
 
     # Update parking record
-    cursor.execute("""
+    cursor.execute(
+        """
         UPDATE parking_records
         SET
             exit_time = NOW(),
@@ -541,20 +627,25 @@ def vehicle_exit(record_id):
             amount = %s,
             status = 'Completed'
         WHERE id = %s
-    """, (
-        duration_minutes,
-        amount,
-        record_id
-    ))
+        """,
+        (
+            duration_minutes,
+            amount,
+            record_id
+        )
+    )
 
     # Make slot available
-    cursor.execute("""
+    cursor.execute(
+        """
         UPDATE parking_slots
         SET
             status = 'Available',
             vehicle_number = NULL
         WHERE id = %s
-    """, (record["slot_id"],))
+        """,
+        (record["slot_id"],)
+    )
 
     # Create transaction ID
     transaction_id = (
@@ -564,7 +655,8 @@ def vehicle_exit(record_id):
     )
 
     # Insert payment
-    cursor.execute("""
+    cursor.execute(
+        """
         INSERT INTO payments
         (
             user_id,
@@ -576,14 +668,16 @@ def vehicle_exit(record_id):
         )
         VALUES
         (%s, %s, %s, %s, %s, %s)
-    """, (
-        record["user_id"],
-        record_id,
-        amount,
-        "Cash",
-        "Paid",
-        transaction_id
-    ))
+        """,
+        (
+            record["user_id"],
+            record_id,
+            amount,
+            "Cash",
+            "Paid",
+            transaction_id
+        )
+    )
 
     connection.commit()
 
@@ -601,6 +695,7 @@ def vehicle_exit(record_id):
 def api_slots():
 
     if "user_id" not in session:
+
         return jsonify({
             "error": "Login required"
         }), 401
@@ -608,13 +703,15 @@ def api_slots():
     connection = get_db_connection()
 
     if connection is None:
+
         return jsonify({
             "error": "Database connection failed"
         }), 500
 
     cursor = connection.cursor(dictionary=True)
 
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT
             id,
             slot_number,
@@ -624,7 +721,8 @@ def api_slots():
             sensor_status
         FROM parking_slots
         ORDER BY id
-    """)
+        """
+    )
 
     slots_data = cursor.fetchall()
 
@@ -642,6 +740,7 @@ def api_slots():
 def api_statistics():
 
     if "user_id" not in session:
+
         return jsonify({
             "error": "Login required"
         }), 401
@@ -649,20 +748,23 @@ def api_statistics():
     connection = get_db_connection()
 
     if connection is None:
+
         return jsonify({
             "error": "Database connection failed"
         }), 500
 
     cursor = connection.cursor(dictionary=True)
 
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT
             COUNT(*) AS total_slots,
             SUM(status = 'Available') AS available_slots,
             SUM(status = 'Occupied') AS occupied_slots,
             SUM(status = 'Reserved') AS reserved_slots
         FROM parking_slots
-    """)
+        """
+    )
 
     statistics = cursor.fetchone()
 
@@ -670,10 +772,18 @@ def api_statistics():
     connection.close()
 
     return jsonify({
-        "total_slots": statistics["total_slots"] or 0,
-        "available_slots": statistics["available_slots"] or 0,
-        "occupied_slots": statistics["occupied_slots"] or 0,
-        "reserved_slots": statistics["reserved_slots"] or 0
+
+        "total_slots":
+            statistics["total_slots"] or 0,
+
+        "available_slots":
+            statistics["available_slots"] or 0,
+
+        "occupied_slots":
+            statistics["occupied_slots"] or 0,
+
+        "reserved_slots":
+            statistics["reserved_slots"] or 0
     })
 
 
@@ -685,6 +795,7 @@ def api_statistics():
 def api_sensor():
 
     if "user_id" not in session:
+
         return jsonify({
             "success": False,
             "error": "Login required"
@@ -693,6 +804,7 @@ def api_sensor():
     data = request.get_json()
 
     if not data:
+
         return jsonify({
             "success": False,
             "error": "No sensor data received"
@@ -704,23 +816,28 @@ def api_sensor():
     occupied = data.get("occupied")
 
     if slot_id is None:
+
         return jsonify({
             "success": False,
             "error": "slot_id is required"
         }), 400
 
     if sensor_id is None:
+
         sensor_id = "SENSOR001"
 
     if distance is None:
+
         distance = 0
 
     if occupied is None:
+
         occupied = False
 
     connection = get_db_connection()
 
     if connection is None:
+
         return jsonify({
             "success": False,
             "error": "Database connection failed"
@@ -729,11 +846,14 @@ def api_sensor():
     cursor = connection.cursor(dictionary=True)
 
     # Check slot
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT *
         FROM parking_slots
         WHERE id = %s
-    """, (slot_id,))
+        """,
+        (slot_id,)
+    )
 
     slot = cursor.fetchone()
 
@@ -751,7 +871,8 @@ def api_sensor():
     occupied_value = 1 if occupied else 0
 
     # Insert sensor data
-    cursor.execute("""
+    cursor.execute(
+        """
         INSERT INTO sensor_data
         (
             slot_id,
@@ -762,36 +883,44 @@ def api_sensor():
         )
         VALUES
         (%s, %s, %s, %s, NOW())
-    """, (
-        slot_id,
-        sensor_id,
-        distance,
-        occupied_value
-    ))
+        """,
+        (
+            slot_id,
+            sensor_id,
+            distance,
+            occupied_value
+        )
+    )
 
     # Update parking slot status
     if occupied_value == 1:
 
-        cursor.execute("""
+        cursor.execute(
+            """
             UPDATE parking_slots
             SET
                 status = 'Occupied',
                 sensor_status = 'Online'
             WHERE id = %s
-        """, (slot_id,))
+            """,
+            (slot_id,)
+        )
 
         new_status = "Occupied"
 
     else:
 
-        cursor.execute("""
+        cursor.execute(
+            """
             UPDATE parking_slots
             SET
                 status = 'Available',
                 vehicle_number = NULL,
                 sensor_status = 'Online'
             WHERE id = %s
-        """, (slot_id,))
+            """,
+            (slot_id,)
+        )
 
         new_status = "Available"
 
@@ -801,13 +930,26 @@ def api_sensor():
     connection.close()
 
     return jsonify({
+
         "success": True,
-        "message": "Sensor data updated successfully",
-        "slot_id": slot_id,
-        "sensor_id": sensor_id,
-        "distance": distance,
-        "occupied": bool(occupied_value),
-        "status": new_status
+
+        "message":
+            "Sensor data updated successfully",
+
+        "slot_id":
+            slot_id,
+
+        "sensor_id":
+            sensor_id,
+
+        "distance":
+            distance,
+
+        "occupied":
+            bool(occupied_value),
+
+        "status":
+            new_status
     })
 
 
@@ -819,6 +961,7 @@ def api_sensor():
 def sensor():
 
     if "user_id" not in session:
+
         return redirect(url_for("login"))
 
     return render_template("sensor.html")
@@ -832,19 +975,23 @@ def sensor():
 def admin_records():
 
     if "user_id" not in session:
+
         return redirect(url_for("login"))
 
     if session.get("user_role") != "admin":
+
         return "Access denied. Admin only."
 
     connection = get_db_connection()
 
     if connection is None:
+
         return "Database connection failed."
 
     cursor = connection.cursor(dictionary=True)
 
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT
             pr.id,
             pr.vehicle_number,
@@ -864,7 +1011,8 @@ def admin_records():
             ON pr.slot_id = ps.id
 
         ORDER BY pr.id DESC
-    """)
+        """
+    )
 
     records = cursor.fetchall()
 
