@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Parking Slots - Smart Parking</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .navbar {
+            background: #111827;
+            color: white;
+            padding: 18px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            margin-left: 20px;
+        }
+
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+
+        .container {
+            width: 92%;
+            margin: 30px auto;
+        }
+
+        .heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .heading h1 {
+            font-size: 30px;
+        }
+
+        .reserve-btn {
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            padding: 11px 18px;
+            border-radius: 7px;
+        }
+
+        .reserve-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .floor-title {
+            margin: 25px 0 15px;
+            font-size: 22px;
+        }
+
+        .slot-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 20px;
+        }
+
+        .slot {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+            border-top: 6px solid #16a34a;
+        }
+
+        .slot.occupied {
+            border-top-color: #dc2626;
+        }
+
+        .slot.reserved {
+            border-top-color: #f59e0b;
+        }
+
+        .parking-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        .slot-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .available-status {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .occupied-status {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .reserved-status {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .vehicle {
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        .sensor {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .exit-form {
+            margin-top: 15px;
+        }
+
+        .exit-btn {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 9px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .exit-btn:hover {
+            background: #b91c1c;
+        }
+
+        .empty {
+            background: white;
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px;
+        }
+
+        @media (max-width: 1000px) {
+            .slot-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 650px) {
+            .navbar {
+                padding: 15px 20px;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .slot-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .heading {
+                display: block;
+            }
+
+            .reserve-btn {
+                display: inline-block;
+                margin-top: 15px;
+            }
+        }
+
+        @media (max-width: 450px) {
+            .slot-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <!-- NAVBAR -->
+
+    <div class="navbar">
+
+        <div class="logo">
+            🚗 Smart Parking
+        </div>
+
+        <div class="nav-links">
+
+            <a href="/dashboard">
+                Dashboard
+            </a>
+
+            <a href="/reserve">
+                Reserve
+            </a>
+
+            <a href="/payments">
+                Payments
+            </a>
+
+            <a href="/logout">
+                Logout
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <!-- MAIN -->
+
+    <div class="container">
+
+        <div class="heading">
+
+            <div>
+                <h1>🅿️ Parking Slots</h1>
+
+                <p style="color:#6b7280; margin-top:8px;">
+                    Check the current parking slot status.
+                </p>
+            </div>
+
+            <a href="/reserve" class="reserve-btn">
+                + Reserve Parking
+            </a>
+
+        </div>
+
+
+        <!-- GROUND FLOOR -->
+
+        <h2 class="floor-title">
+            🏢 Ground Floor
+        </h2>
+
+        <div class="slot-grid">
+
+            {% for slot in slots %}
+
+                {% if slot.floor == "Ground Floor" %}
+
+                <div class="slot
+                    {% if slot.status == 'Occupied' %}
+                        occupied
+                    {% elif slot.status == 'Reserved' %}
+                        reserved
+                    {% endif %}
+                ">
+
+                    <div class="parking-icon">
+                        🚗
+                    </div>
+
+                    <div class="slot-number">
+                        {{ slot.slot_number }}
+                    </div>
+
+
+                    {% if slot.status == "Available" %}
+
+                        <div class="status available-status">
+                            AVAILABLE
+                        </div>
+
+                    {% elif slot.status == "Occupied" %}
+
+                        <div class="status occupied-status">
+                            OCCUPIED
+                        </div>
+
+                    {% elif slot.status == "Reserved" %}
+
+                        <div class="status reserved-status">
+                            RESERVED
+                        </div>
+
+                    {% endif %}
+
+
+                    {% if slot.vehicle_number %}
+
+                        <div class="vehicle">
+                            🚘 {{ slot.vehicle_number }}
+                        </div>
+
+                    {% else %}
+
+                        <div class="vehicle">
+                            No Vehicle
+                        </div>
+
+                    {% endif %}
+
+
+                    <div class="sensor">
+                        📡 Sensor:
+                        {{ slot.sensor_status }}
+                    </div>
+
+
+                    {% if slot.status == "Occupied" %}
+
+                        {% for record in parking_records %}
+
+                            {% if record.slot_id == slot.id %}
+
+                                <form
+                                    action="/exit/{{ record.id }}"
+                                    method="POST"
+                                    class="exit-form"
+                                >
+
+                                    <button
+                                        type="submit"
+                                        class="exit-btn"
+                                        onclick="return confirm('Confirm vehicle exit?')"
+                                    >
+                                        Vehicle Exit
+                                    </button>
+
+                                </form>
+
+                            {% endif %}
+
+                        {% endfor %}
+
+                    {% endif %}
+
+                </div>
+
+                {% endif %}
+
+            {% endfor %}
+
+        </div>
+
+
+        <!-- FIRST FLOOR -->
+
+        <h2 class="floor-title">
+            🏢 First Floor
+        </h2>
+
+        <div class="slot-grid">
+
+            {% for slot in slots %}
+
+                {% if slot.floor == "First Floor" %}
+
+                <div class="slot
+                    {% if slot.status == 'Occupied' %}
+                        occupied
+                    {% elif slot.status == 'Reserved' %}
+                        reserved
+                    {% endif %}
+                ">
+
+                    <div class="parking-icon">
+                        🚗
+                    </div>
+
+                    <div class="slot-number">
+                        {{ slot.slot_number }}
+                    </div>
+
+
+                    {% if slot.status == "Available" %}
+
+                        <div class="status available-status">
+                            AVAILABLE
+                        </div>
+
+                    {% elif slot.status == "Occupied" %}
+
+                        <div class="status occupied-status">
+                            OCCUPIED
+                        </div>
+
+                    {% elif slot.status == "Reserved" %}
+
+                        <div class="status reserved-status">
+                            RESERVED
+                        </div>
+
+                    {% endif %}
+
+
+                    {% if slot.vehicle_number %}
+
+                        <div class="vehicle">
+                            🚘 {{ slot.vehicle_number }}
+                        </div>
+
+                    {% else %}
+
+                        <div class="vehicle">
+                            No Vehicle
+                        </div>
+
+                    {% endif %}
+
+
+                    <div class="sensor">
+                        📡 Sensor:
+                        {{ slot.sensor_status }}
+                    </div>
+
+
+                    {% if slot.status == "Occupied" %}
+
+                        {% for record in parking_records %}
+
+                            {% if record.slot_id == slot.id %}
+
+                                <form
+                                    action="/exit/{{ record.id }}"
+                                    method="POST"
+                                    class="exit-form"
+                                >
+
+                                    <button
+                                        type="submit"
+                                        class="exit-btn"
+                                        onclick="return confirm('Confirm vehicle exit?')"
+                                    >
+                                        Vehicle Exit
+                                    </button>
+
+                                </form>
+
+                            {% endif %}
+
+                        {% endfor %}
+
+                    {% endif %}
+
+                </div>
+
+                {% endif %}
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>

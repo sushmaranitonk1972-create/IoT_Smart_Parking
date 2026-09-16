@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Reserve Parking - Smart Parking</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        /* NAVBAR */
+
+        .navbar {
+            background: #111827;
+            color: white;
+            padding: 18px 40px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            margin-left: 20px;
+        }
+
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+
+        /* MAIN */
+
+        .container {
+            width: 90%;
+            max-width: 900px;
+            margin: 40px auto;
+        }
+
+        .title {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .title h1 {
+            font-size: 30px;
+            margin-bottom: 8px;
+        }
+
+        .title p {
+            color: #6b7280;
+        }
+
+        /* FORM CARD */
+
+        .form-card {
+            background: white;
+            padding: 35px;
+            border-radius: 12px;
+
+            box-shadow:
+                0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px;
+
+            border: 1px solid #d1d5db;
+            border-radius: 7px;
+
+            font-size: 15px;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 13px;
+
+            background: #2563eb;
+            color: white;
+
+            border: none;
+            border-radius: 7px;
+
+            font-size: 16px;
+            font-weight: bold;
+
+            cursor: pointer;
+        }
+
+        .submit-btn:hover {
+            background: #1d4ed8;
+        }
+
+        /* ERROR */
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+
+            padding: 12px;
+            border-radius: 7px;
+
+            margin-bottom: 20px;
+        }
+
+        /* INFO */
+
+        .info {
+            margin-top: 25px;
+            background: #eff6ff;
+            padding: 18px;
+            border-radius: 8px;
+
+            color: #1e40af;
+        }
+
+        .back {
+            display: inline-block;
+            margin-top: 20px;
+
+            text-decoration: none;
+            color: #2563eb;
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+
+            .navbar {
+                padding: 15px 20px;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .container {
+                width: 94%;
+            }
+
+            .form-card {
+                padding: 25px;
+            }
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+
+<!-- NAVBAR -->
+
+<div class="navbar">
+
+    <div class="logo">
+        🚗 Smart Parking
+    </div>
+
+    <div class="nav-links">
+
+        <a href="/dashboard">
+            Dashboard
+        </a>
+
+        <a href="/slots">
+            Parking Slots
+        </a>
+
+        <a href="/payments">
+            Payments
+        </a>
+
+        <a href="/logout">
+            Logout
+        </a>
+
+    </div>
+
+</div>
+
+
+<!-- MAIN -->
+
+<div class="container">
+
+
+    <div class="title">
+
+        <h1>
+            📅 Reserve Parking Slot
+        </h1>
+
+        <p>
+            Book an available parking slot for your vehicle.
+        </p>
+
+    </div>
+
+
+    <div class="form-card">
+
+
+        <!-- ERROR MESSAGE -->
+
+        {% if error %}
+
+        <div class="error">
+            ⚠️ {{ error }}
+        </div>
+
+        {% endif %}
+
+
+        <!-- RESERVATION FORM -->
+
+        <form action="/reserve" method="POST">
+
+
+            <!-- PARKING SLOT -->
+
+            <div class="form-group">
+
+                <label for="slot_id">
+                    🅿️ Select Parking Slot
+                </label>
+
+                <select
+                    id="slot_id"
+                    name="slot_id"
+                    required
+                >
+
+                    <option value="">
+                        -- Select Available Slot --
+                    </option>
+
+                    {% for slot in available_slots %}
+
+                    <option value="{{ slot.id }}">
+
+                        {{ slot.slot_number }}
+                        -
+                        {{ slot.floor }}
+
+                    </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <!-- VEHICLE NUMBER -->
+
+            <div class="form-group">
+
+                <label for="vehicle_number">
+                    🚘 Vehicle Number
+                </label>
+
+                <input
+                    type="text"
+                    id="vehicle_number"
+                    name="vehicle_number"
+                    placeholder="Example: HR01AB1234"
+                    maxlength="20"
+                    required
+                >
+
+            </div>
+
+
+            <!-- DATE -->
+
+            <div class="form-group">
+
+                <label for="reservation_date">
+                    📅 Reservation Date
+                </label>
+
+                <input
+                    type="date"
+                    id="reservation_date"
+                    name="reservation_date"
+                    required
+                >
+
+            </div>
+
+
+            <!-- START TIME -->
+
+            <div class="form-group">
+
+                <label for="start_time">
+                    🕐 Start Time
+                </label>
+
+                <input
+                    type="time"
+                    id="start_time"
+                    name="start_time"
+                    required
+                >
+
+            </div>
+
+
+            <!-- END TIME -->
+
+            <div class="form-group">
+
+                <label for="end_time">
+                    🕐 End Time
+                </label>
+
+                <input
+                    type="time"
+                    id="end_time"
+                    name="end_time"
+                    required
+                >
+
+            </div>
+
+
+            <!-- SUBMIT -->
+
+            <button
+                type="submit"
+                class="submit-btn"
+            >
+                ✅ Confirm Reservation
+            </button>
+
+
+        </form>
+
+
+        <!-- INFORMATION -->
+
+        <div class="info">
+
+            <strong>💡 Parking Information</strong>
+
+            <br><br>
+
+            • Select only an available parking slot.<br>
+
+            • Enter your correct vehicle number.<br>
+
+            • Select the reservation date and time.<br>
+
+            • After confirmation, the slot will become
+            <strong>Reserved</strong>.
+
+        </div>
+
+
+        <a href="/dashboard" class="back">
+            ← Back to Dashboard
+        </a>
+
+
+    </div>
+
+</div>
+
+
+<script>
+
+    // Automatically set today's date
+
+    const dateInput =
+        document.getElementById("reservation_date");
+
+    const today =
+        new Date().toISOString().split("T")[0];
+
+    dateInput.min = today;
+
+</script>
+
+
+</body>
+
+</html>

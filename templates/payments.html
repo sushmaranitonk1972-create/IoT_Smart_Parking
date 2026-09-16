@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payment History - Smart Parking</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 30px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #222;
+        }
+
+        .container {
+            width: 95%;
+            margin: 30px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        th {
+            background: #222;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background: #f8f8f8;
+        }
+
+        .paid {
+            color: green;
+            font-weight: bold;
+        }
+
+        .back-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 18px;
+            background: #222;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>💳 Payment History</h1>
+
+    <div class="container">
+
+        <table>
+
+            <tr>
+                <th>ID</th>
+                <th>Parking Record</th>
+                <th>Amount</th>
+                <th>Payment Method</th>
+                <th>Status</th>
+                <th>Transaction ID</th>
+                <th>Payment Time</th>
+            </tr>
+
+            {% for payment in payments %}
+
+            <tr>
+                <td>{{ payment.id }}</td>
+
+                <td>
+                    {{ payment.parking_record_id }}
+                </td>
+
+                <td>
+                    ₹{{ payment.amount }}
+                </td>
+
+                <td>
+                    {{ payment.payment_method }}
+                </td>
+
+                <td class="paid">
+                    {{ payment.payment_status }}
+                </td>
+
+                <td>
+                    {{ payment.transaction_id }}
+                </td>
+
+                <td>
+                    {{ payment.payment_time }}
+                </td>
+            </tr>
+
+            {% else %}
+
+            <tr>
+                <td colspan="7">
+                    No payment records found.
+                </td>
+            </tr>
+
+            {% endfor %}
+
+        </table>
+
+        <a href="/dashboard" class="back-btn">
+            ← Back to Dashboard
+        </a>
+
+    </div>
+
+</body>
+
+</html>
